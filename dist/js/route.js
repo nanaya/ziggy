@@ -1032,7 +1032,9 @@ function (_String) {
     _this.name = name;
     _this.absolute = absolute;
     _this.ziggy = customZiggy ? customZiggy : Ziggy;
-    _this.template = _this.name ? new js_UrlBuilder(name, absolute, _this.ziggy).construct() : '', _this.urlParams = _this.normalizeParams(params);
+    _this.urlBuilder = _this.name ? new js_UrlBuilder(name, absolute, _this.ziggy) : null;
+    _this.template = _this.urlBuilder ? _this.urlBuilder.construct() : '';
+    _this.urlParams = _this.normalizeParams(params);
     _this.queryParams = {};
     _this.hydrated = '';
     return _this;
@@ -1074,10 +1076,14 @@ function (_String) {
       var _this2 = this;
 
       if (this.hydrated) return this.hydrated;
-      return this.hydrated = this.template.replace(/{([^}]+)}/gi, function (tag, i) {
+      var hydrated = this.template.replace(/{([^}]+)}/gi, function (tag, i) {
         var keyName = _this2.trimParam(tag),
-            defaultParameter = _this2.ziggy.defaultParameters[keyName],
-            tagValue; // If a default parameter exists, and a value wasn't
+            defaultParameter,
+            tagValue;
+
+        if (_this2.ziggy.defaultParameters.hasOwnProperty(keyName)) {
+          defaultParameter = _this2.ziggy.defaultParameters[keyName];
+        } // If a default parameter exists, and a value wasn't
         // provided for it manually, use the default value
 
 
@@ -1113,6 +1119,13 @@ function (_String) {
 
         return encodeURIComponent(tagValue);
       });
+
+      if (this.urlBuilder != null && this.urlBuilder.path !== '') {
+        hydrated = hydrated.replace(/\/+$/, '');
+      }
+
+      this.hydrated = hydrated;
+      return this.hydrated;
     }
   }, {
     key: "matchUrl",
